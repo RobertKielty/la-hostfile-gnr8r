@@ -17,7 +17,7 @@ running machines.
 
 The following assumptions are made about your setup and really reflect my current setup a laptop running linux.
 
- - You have a means of running [sed](https://twww.gnu.org/software/sed/manual/sed.html)
+ - You have a means of running [GNU sed](https://twww.gnu.org/software/sed/manual/sed.html)
  - You have manually logged in to Linux Academy to start the machines you need for your learning session
  - You are logging to Linux Academy using a linked Google account
  - The generated sed script relies on the fact that you have manually added the host names to your /etc/hosts file
@@ -27,18 +27,27 @@ The following assumptions are made about your setup and really reflect my curren
 ### To run this app
 
 ```
-$ git clone 
-$ cd la-hosts-generator
+$ git clone git@github.com:RobertKielty/la-hostfile-gnr8r.git
+$ cd la-hostfile-gnr8r
 
 # Run the test which will retrieve the latest public IP addresses of your running Linux Academy Cloud hosts 
 $ ./gradlew -q -Dlinuxacademy.username=YOUR_GMAIL_EMAIL_ADDR -Dlinuxacademy.password=YOUR_GMAIL_PASSWORD
 
-# Take a copy or your current hosts file into this directory, remember it assumes that there are entries for host 
-# we are about to edit with the generated sed script 
+# Take a copy or your current hosts file into this directory,
+# The application assumes that there are existing entries for hosts we are about to edit with the generated
+# sed script
+ 
 $ cp /etc/hosts .
 
-# Run GNU sed with extend regex's 
-sed -r -f la_hosts.sed -i.orig hosts && diff hosts hosts.orig
+# Run GNU sed with extended regular expressions for the generated script found, la_hosts.sed backing up hosts
+# to hosts.orig
+sed -r -f la_hosts.sed -i.orig hosts
+
+# Review the changes
+diff hosts hosts.orig
+
+# If all is well, update your /etc/hosts file
+sudo cp hosts /etc/hosts
 ```
 
 
