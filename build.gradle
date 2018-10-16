@@ -1,3 +1,6 @@
+plugins {
+    id 'nu.studer.credentials' version '1.0.4'
+}
 apply plugin: 'java'
 
 defaultTasks 'clean', 'test'
@@ -34,13 +37,14 @@ compileJava.dependsOn libs
 [compileJava, compileTestJava]*.options.collect {options -> options.debug = true}
 [compileJava, compileTestJava]*.sourceCompatibility = 1.8
 [compileJava, compileTestJava]*.targetCompatibility = 1.8
+println "Username: " + credentials."lauser"
 
 test {
   systemProperties = [
     'file.encoding': 'UTF-8',
     'selenide.browser': 'firefox',
-    'linuxacademy.username': System.getProperty('linuxacademy.username'),
-    'linuxacademy.password': System.getProperty('linuxacademy.password')
+    'linuxacademy.username': credentials."lauser",
+    'linuxacademy.password': credentials."lapassword"
   ]
   testLogging.showStandardStreams = true
 }
