@@ -4,65 +4,82 @@ import com.codeborne.selenide.SelenideElement;
 import org.junit.Test;
 import org.openqa.selenium.By;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.codeborne.selenide.Selenide.$;
 
 /**
- * For each of the running hosts on Linux Academy outputs public IP address at the time that this is run followed by
- * the name of the host.
- * TODO add the server role as a comment
+ * Create a latesthostfile with current IP Addresses of your running Linux Academy hosts.
  */
 public class LinuxAcademyLocalHostFileGenerator extends LinuxAcademyTest {
 
 
-    public static final int MAX_NUMBER_OF_LA_HOSTS = 6;
-    public static final String SED_SCRIPT_TO_UPDATE_LA_HOSTENTRIES = "./update_la_hostentries.sed";
-
-    // Thanks to https://stackoverflow.com/users/3874768/repzero
-    // for https://stackoverflow.com/questions/28457543/sed-replace-ip-in-hosts-file-using-hostname-as-pattern
-    // which was modified slightly
-    public static final String SED_COMMAND="s/^ *[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+ (%s)/%s \\1/%s";
+    private static final int MAX_NUMBER_OF_LA_HOSTS = 6;
+    private SelenideElement machineStatus;
 
     @Test
-    /**
-     *
-     * Generates a sed script named SED_SCRIPT_TO_UPDATE_LA_HOSTENTRIES
-     *
-     * The sed script should be run against /etc/hosts as follows
-     * <code>sed -r -f update_la_hosts /etc/hosts</code>
-     *
-     * Matches on Linux Academy Hostnames and replaces their IP addresses with the new IP addresses found on
-     * LinuxAcademy.com > Cloud Servers
-     *
-     * <h1>Assumptions</h1>
-     * Your Linux Academy hosts are entries already present in your /etc/hosts file
-     * However, hostfile entries with you latest IP addresses are sent to STDOUT
-     */
-    public void generateLocalHostFileEntryForAllMachinesRunning(){
-        try (BufferedWriter br = new BufferedWriter(new FileWriter(SED_SCRIPT_TO_UPDATE_LA_HOSTENTRIES))){
-            for (int machineNumber = 1; machineNumber < MAX_NUMBER_OF_LA_HOSTS; machineNumber++) {
-                SelenideElement machineStatus = $(By.xpath("//*[@id=\"status_" + machineNumber + "\"]"));
-                if (machineStatus.innerHtml().equalsIgnoreCase("running")) {
+    public void getLatestIPaddresses(){
+        Map <String, String> latestIPMap = new HashMap<>();
 
-                    SelenideElement machinePublicIP = $(By.xpath("//*[@id=\"public_ip_" + machineNumber + "\"]/a"));
-                    SelenideElement publicHostname = $(By.xpath("//*[@id=\"hostname_" + machineNumber + "\"]"));
-
-                    String hostname = publicHostname.innerHtml().substring(0, publicHostname.innerHtml().indexOf("|"));
-                    String ipAddr = machinePublicIP.innerHtml();
-
-                    System.out.println(ipAddr + " " + hostname + System.getProperty("line.separator"));
-
-                    br.write(String.format(SED_COMMAND,
-                                    hostname,
-                                    ipAddr,
-                                    System.getProperty("line.separator")));
-
-                }
+        for (int machineNumber = 1; machineNumber < MAX_NUMBER_OF_LA_HOSTS; machineNumber++) {
+            try {
+                machineStatus = $(By.xpath("//*[@id=\"status_" + machineNumber + "\"]"));
+            } catch (Exception e){
+                System.err.printf("There a problem reading the status of machine number $s . SKIPPING\n" , machineNumber);
             }
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
+            if (machineStatus.innerHtml().equalsIgnoreCase("running")) {
+                SelenideElement machinePublicIP = $(By.xpath("//*[@id=\"public_ip_" + machineNumber + "\"]/a"));
+                SelenideElement publicHostname = $(By.xpath("//*[@id=\"hostname_" + machineNumber + "\"]"));
+
+                String hostname = publicHostname.innerHtml().substring(0, publicHostname.innerHtml().indexOf("|")).trim();
+                String ipAddr = machinePublicIP.innerHtml();
+
+                latestIPMap.put(hostname,ipAddr);
+
+            } else {
+                System.err.printf("WARN: Machine number %s is %s\n",  machineNumber, machineStatus.innerHtml());
+            }
+        }
+        generateLatestHostfile(latestIPMap);
+
+    }
+
+    private static void generateLatestHostfile(Map<String, String> latestPublicIPmap) {
+        String systemHostsfile = "/etc/hosts";
+        String gnr8dHostsfile = "./hosts.latest";
+        java.nio.charset.Charset charset = StandardCharsets.UTF_8;
+
+        try (Stream<String> sytemHostsfile = Files.lines(Paths.get(systemHostsfile));
+             java.io.BufferedWriter gnr8dHostfileWriter = Files.newBufferedWriter(Paths.get(gnr8dHostsfile), charset)
+        ) {
+            sytemHostsfile.forEach(hostsfileEntry -> {
+                try {
+                    String [] currentHostEntry = (hostsfileEntry.split("\\s+"));
+
+                    if (currentHostEntry.length > 1 && latestPublicIPmap.containsKey(currentHostEntry[1])) {
+                        String ipReadFromLa = latestPublicIPmap.get(currentHostEntry[1]);
+                        if (ipReadFromLa != null) {
+                            gnr8dHostfileWriter.write(ipReadFromLa + " " + currentHostEntry[1] + " # updated by la-hostfile-generator at : " + LocalDateTime.now());
+                            gnr8dHostfileWriter.newLine();
+                        }
+                    } else {
+                        gnr8dHostfileWriter.write(hostsfileEntry);
+                        gnr8dHostfileWriter.newLine();
+                    }
+                } catch (IOException  writeEx) {
+                    writeEx.printStackTrace();
+                }
+
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

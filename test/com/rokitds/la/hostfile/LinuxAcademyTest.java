@@ -7,9 +7,7 @@ import org.junit.Rule;
 import org.openqa.selenium.By;
 import org.selenide.tools.Highlighter;
 
-import static com.codeborne.selenide.Condition.disappears;
 import static com.codeborne.selenide.Configuration.*;
-import static com.codeborne.selenide.Selectors.byText;
 import static com.codeborne.selenide.Selectors.byXpath;
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
@@ -33,7 +31,7 @@ public class LinuxAcademyTest {
         }
 
         System.out.println(laUsername);
-        timeout = 10000;
+        timeout = 6000 ;
         baseUrl = "http://linuxacademy.com";
         startMaximized = false;
         browser = "chrome";
@@ -47,9 +45,6 @@ public class LinuxAcademyTest {
 
     }
 
-    protected static void waitUntilPagesIsLoaded() {
-        $(byText("email")).waitUntil(disappears, 2000000);
-    }
 
     @AfterClass
     public static void logout() {

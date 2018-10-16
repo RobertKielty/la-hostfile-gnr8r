@@ -32,12 +32,8 @@ This will place your credentials in a file encrypted using PBKDF2WithHmacSHA1. Y
 
 The following assumptions are made about your setup and really reflect my current setup a laptop running linux.
 
- - You have a means of running [GNU sed](https://twww.gnu.org/software/sed/manual/sed.html) *(Removal of this dependancy coming soon!)*
  - You have manually logged in to Linux Academy to start the machines you need for your learning session
- - You are logging in to Linux Academy using a linked Google account
- - The generated sed script relies on the fact that you have manually added the host names to your /etc/hosts file *(Fix coming soon!)*
-
-So there are certainly improvements to be made on this implementation.
+ - You are logging in to Linux Academy using a linked Google account - It would't be too hard to improve this for other login options.
 
 ### To run this app
 
@@ -48,19 +44,9 @@ $ cd la-hostfile-gnr8r
 # Run the test which will retrieve the latest public IP addresses of your running Linux Academy Cloud hosts
 $ ./gradlew -q -PcredentialsPassphrase=A_PASSWORD_FOR_CREDENTIALS_STORE
 
-# Take a copy or your current hosts file into this directory,
-# The application assumes that there are existing entries for hosts we are about to edit with the generated
-# sed script
-
-$ cp /etc/hosts .
-
-# Run GNU sed with extended regular expressions for the generated script found, la_hosts.sed backing up hosts
-# to hosts.orig
-sed -r -f la_hosts.sed -i.orig hosts
-
 # Review the changes
-diff hosts hosts.orig
+diff hosts.latest /etc/hosts
 
 # If all is well, update your /etc/hosts file
-sudo cp hosts /etc/hosts
+sudo cp hosts.latest /etc/hosts
 ```
