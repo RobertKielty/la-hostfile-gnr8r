@@ -25,7 +25,12 @@ public class LinuxAcademyTest {
 
     @BeforeClass
     public static void openCloudMachines() {
-        System.out.print("laUsername : ");
+        if (laUsername.length()==0){
+            System.err.println("ERROR : linuxacademy.username not set properly on the credentials store. Exiting.");
+            System.exit(100);
+        } else {
+            System.out.print("laUsername : ");
+        }
 
         System.out.println(laUsername);
         timeout = 10000;
