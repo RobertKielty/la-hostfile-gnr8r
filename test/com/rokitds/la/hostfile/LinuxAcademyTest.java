@@ -5,7 +5,13 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.openqa.selenium.By;
-import org.selenide.tools.Highlighter;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.codeborne.selenide.Condition.disappears;
 import static com.codeborne.selenide.Configuration.*;
@@ -13,12 +19,11 @@ import static com.codeborne.selenide.Selectors.byText;
 import static com.codeborne.selenide.Selectors.byXpath;
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
-import static com.codeborne.selenide.WebDriverRunner.addListener;
 import static com.codeborne.selenide.WebDriverRunner.closeWebDriver;
 
 public class LinuxAcademyTest {
-    private static String laUsername = System.getProperty("linuxacademy.username");
-    private static String laPassword = System.getProperty("linuxacademy.password");
+    private static String laUsername = System.getProperty("lauser");
+    private static String laPassword = System.getProperty("lapassword");
 
     @Rule
     public ScreenShooter screenShooter = ScreenShooter.failedTests();
@@ -33,7 +38,7 @@ public class LinuxAcademyTest {
         startMaximized = false;
         browser = "chrome";
 
-        addListener(new Highlighter());
+//        addListener(new Highlighter());
 
         open("/");
         loginUsingGoogle();

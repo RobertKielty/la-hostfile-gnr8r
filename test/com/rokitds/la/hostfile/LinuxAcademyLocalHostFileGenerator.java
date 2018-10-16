@@ -4,45 +4,29 @@ import com.codeborne.selenide.SelenideElement;
 import org.junit.Test;
 import org.openqa.selenium.By;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Stream;
 
 import static com.codeborne.selenide.Selenide.$;
 
 /**
- * For each of the running hosts on Linux Academy outputs public IP address at the time that this is run followed by
- * the name of the host.
+ * Create a latesthostfile with current IP Addresses of your running Linux Academy hosts.
  * TODO add the server role as a comment
  */
 public class LinuxAcademyLocalHostFileGenerator extends LinuxAcademyTest {
 
 
-    public static final int MAX_NUMBER_OF_LA_HOSTS = 6;
-    public static final String SED_SCRIPT_TO_UPDATE_LA_HOSTENTRIES = "./update_la_hostentries.sed";
-
-    // Thanks to https://stackoverflow.com/users/3874768/repzero
-    // for https://stackoverflow.com/questions/28457543/sed-replace-ip-in-hosts-file-using-hostname-as-pattern
-    // which was modified slightly
-    public static final String SED_COMMAND="s/^ *[0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+ (%s)/%s \\1/%s";
+    private static final int MAX_NUMBER_OF_LA_HOSTS = 6;
 
     @Test
-    /**
-     *
-     * Generates a sed script named SED_SCRIPT_TO_UPDATE_LA_HOSTENTRIES
-     *
-     * The sed script should be run against /etc/hosts as follows
-     * <code>sed -r -f update_la_hosts /etc/hosts</code>
-     *
-     * Matches on Linux Academy Hostnames and replaces their IP addresses with the new IP addresses found on
-     * LinuxAcademy.com > Cloud Servers
-     *
-     * <h1>Assumptions</h1>
-     * Your Linux Academy hosts are entries already present in your /etc/hosts file
-     * However, hostfile entries with you latest IP addresses are sent to STDOUT
-     */
-    public void generateLocalHostFileEntryForAllMachinesRunning(){
-        try (BufferedWriter br = new BufferedWriter(new FileWriter(SED_SCRIPT_TO_UPDATE_LA_HOSTENTRIES))){
-            for (int machineNumber = 1; machineNumber < MAX_NUMBER_OF_LA_HOSTS; machineNumber++) {
+    public void getLatestIPaddresses(){
+        Map <String, String> latestIPMap = new HashMap<>();
+        for (int machineNumber = 1; machineNumber < MAX_NUMBER_OF_LA_HOSTS; machineNumber++) {
                 SelenideElement machineStatus = $(By.xpath("//*[@id=\"status_" + machineNumber + "\"]"));
                 if (machineStatus.innerHtml().equalsIgnoreCase("running")) {
 
@@ -52,17 +36,40 @@ public class LinuxAcademyLocalHostFileGenerator extends LinuxAcademyTest {
                     String hostname = publicHostname.innerHtml().substring(0, publicHostname.innerHtml().indexOf("|"));
                     String ipAddr = machinePublicIP.innerHtml();
 
-                    System.out.println(ipAddr + " " + hostname + System.getProperty("line.separator"));
-
-                    br.write(String.format(SED_COMMAND,
-                                    hostname,
-                                    ipAddr,
-                                    System.getProperty("line.separator")));
+                    latestIPMap.put(hostname,ipAddr);
 
                 }
-            }
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
+                generateLatestHostfile(latestIPMap);
+        }
+    }
+
+    private static void generateLatestHostfile(Map<String, String> latestPublicIPmap) {
+        String systemHostsfile = "/etc/hosts";
+        String latestHostsfile = "./hosts.latest";
+        String newLine = System.getProperty("line.separator");
+        java.nio.charset.Charset charset =
+                StandardCharsets.UTF_8;
+
+        try (Stream<String> stream = Files.lines(Paths.get(systemHostsfile));
+             java.io.BufferedWriter writer = Files.newBufferedWriter(Paths.get(latestHostsfile), charset)
+        ) {
+            stream.forEach(line -> {
+                for (Map.Entry<String, String> entry : latestPublicIPmap.entrySet()) {
+                    String hostname = entry.getKey();
+                    String ip = entry.getValue();
+                    try {
+                        if (line.contains(hostname)) {
+                            writer.write(ip + " " + hostname + newLine);
+                        } else {
+                            writer.write(line);
+                        }
+                    } catch (IOException writeEx) {
+                        writeEx.printStackTrace();
+                    }
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
