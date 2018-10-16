@@ -9,10 +9,9 @@ the courses.
 
 Each time you start up your cloud machines on Linux Academy they are assigned new public IP addresses.
 
-This application generates a sed script that will edit your hosts file to replace the old IP addresses with new ones.
+This application generates a new hosts file, `hosts.latest` in the top level directory of the project with the latest IP addresses of the running machines on your Linux Academy account.
 
-The app uses [Selenide](https://selenide.org/), a test automation framework based on Selenium which allows the app to
-drive a browser to login and traverse the Linux Academy web interface to gather the public IP address of all
+The app uses [Selenide](https://selenide.org/), a test automation framework based on Selenium which allows the app to drive a browser to login and traverse the Linux Academy web interface to gather the public IP address of all
 running machines.
 
 ### Storing an encrypted copy of your Linux Academy credentials
