@@ -5,7 +5,11 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.selenide.tools.Highlighter;
+
+import java.time.Duration;
 
 import static com.codeborne.selenide.Configuration.*;
 import static com.codeborne.selenide.Selectors.byXpath;
@@ -13,8 +17,17 @@ import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
 import static com.codeborne.selenide.WebDriverRunner.addListener;
 import static com.codeborne.selenide.WebDriverRunner.closeWebDriver;
+import static com.codeborne.selenide.WebDriverRunner.getWebDriver;
+import static org.openqa.selenium.support.ui.ExpectedConditions.visibilityOfElementLocated;
 
 public class LinuxAcademyTest {
+
+    public static final int TIME_OUT_IN_SECONDS = 5;
+    public static final int POLLING_INTERVAL_IN_MILLI_S = 500;
+    public static final String XPATH_OF_FIFTH_LA_HOST = "//*[@id=\"status_5\"]";
+    public static final String ID_CLOUD_SERVERS_ANCHOR = "//*[@id=\"cloud-servers-link\"]/a";
+    public static final String HTTP_LINUXACADEMY_COM = "http://linuxacademy.com";
+
     private static String laUsername = System.getProperty("linuxacademy.username");
     private static String laPassword = System.getProperty("linuxacademy.password");
 
@@ -27,12 +40,10 @@ public class LinuxAcademyTest {
             System.err.println("ERROR : linuxacademy.username not set properly on the credentials store. Exiting.");
             System.exit(100);
         } else {
-            System.out.print("laUsername : ");
+            System.out.print("laUsername : " + laUsername);
         }
 
-        System.out.println(laUsername);
-        timeout = 6000 ;
-        baseUrl = "http://linuxacademy.com";
+        baseUrl = HTTP_LINUXACADEMY_COM;
         startMaximized = false;
         browser = "chrome";
 
@@ -41,7 +52,13 @@ public class LinuxAcademyTest {
         open("/");
         loginUsingGoogle();
 
-        $(By.xpath("//*[@id=\"cloud-servers-link\"]/a")).click();
+        $(By.xpath(ID_CLOUD_SERVERS_ANCHOR)).click();
+        // Add an explicit wait with a 5 second timeout that polls every 500 ms to find the status of the fifth machine
+        new WebDriverWait(getWebDriver(), TIME_OUT_IN_SECONDS)
+                .pollingEvery(Duration.ofMillis(POLLING_INTERVAL_IN_MILLI_S))
+                .ignoring(NoSuchElementException.class)
+                .withMessage("Couldn't find status of the 5th host")
+                .until(visibilityOfElementLocated(By.xpath(XPATH_OF_FIFTH_LA_HOST)));
 
     }
 
