@@ -1,6 +1,6 @@
 ### Linux Academy local hostfile generator
 
-*Small project that I used to learn some Selenide/Selenium browser automation. Might be useful for other Linux Academ Subscribers*
+*Small project that I used to learn some Selenide/Selenium browser automation. Might be useful for other Linux Academy Subscribers*
 
 [Linux Academy](https://www.linuxacademy.com) is an online learning platform dedicated to teaching Cloud Technologies.
 
