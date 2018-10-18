@@ -15,9 +15,6 @@ import java.util.stream.Stream;
 
 import static com.codeborne.selenide.Selenide.$;
 
-/**
- * Create a latesthostfile with current IP Addresses of your running Linux Academy hosts.
- */
 public class LinuxAcademyLocalHostFileGenerator extends LinuxAcademyTest {
 
 
@@ -25,6 +22,14 @@ public class LinuxAcademyLocalHostFileGenerator extends LinuxAcademyTest {
     private SelenideElement machineStatus;
 
     @Test
+    /**
+     * Create a file hosts.latest in current dir from a copy of your /etc/hosts file
+     * and update it as follows:
+     *  - for any LA hostnames present this updates their public IP addresses
+     *  - add new hostname entries for LA hosts that are not present in the file
+     *
+     *  All file changes commented and timestamped
+     */
     public void getLatestIPaddresses(){
         Map <String, String> latestIPMap = new HashMap<>();
 
@@ -68,6 +73,7 @@ public class LinuxAcademyLocalHostFileGenerator extends LinuxAcademyTest {
                         if (ipReadFromLa != null) {
                             gnr8dHostfileWriter.write(ipReadFromLa + " " + currentHostEntry[1] + " # updated by la-hostfile-generator at : " + LocalDateTime.now());
                             gnr8dHostfileWriter.newLine();
+                            latestPublicIPmap.remove(currentHostEntry[1]);
                         }
                     } else {
                         gnr8dHostfileWriter.write(hostsfileEntry);
@@ -78,6 +84,12 @@ public class LinuxAcademyLocalHostFileGenerator extends LinuxAcademyTest {
                 }
 
             });
+            // Add remaining hosts found on LA to end of the generated file
+            for (String laHost: latestPublicIPmap.keySet()) {
+                String ipReadFromLa = latestPublicIPmap.get(laHost);
+                gnr8dHostfileWriter.write(ipReadFromLa + " " + laHost + " # added by la-hostfile-generator at : " + LocalDateTime.now());
+                gnr8dHostfileWriter.newLine();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
